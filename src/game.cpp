@@ -94,21 +94,24 @@ bool Game::is_running() const
 
 void Game::loop()
 {
-    int cur_time = SDL_GetTicks();
-    int dt = 1000 / FPS;
+    Uint32 cur_time = SDL_GetTicks();
+    Uint32 dt = 1000 / FPS;
     acc_time += cur_time - last_time;
     last_time = cur_time;
-    bool updated = false;
-    while (acc_time >= dt)
-    {
-        updated = true;
-        acc_time -= dt;
-        update(dt);
-    }
-    if (updated)
-    {
-        draw();
-    }
+    SDL_Delay(std::max(dt - (cur_time - last_time), (Uint32)0));
+    update(dt);
+    draw();
+    // bool updated = false;
+    // while (acc_time >= dt)
+    // {
+    //     updated = true;
+    //     acc_time -= dt;
+    //     update(dt);
+    // }
+    // if (updated)
+    // {
+    //     draw();
+    // }
 }
 
 void Game::init()
@@ -272,7 +275,7 @@ void Game::update(Uint32 dt)
 
     ////////TICK////////
     tick_couter += dt;
-    if (tick_couter >= std::max(1000 - 100 * level, 150))
+    if (tick_couter >= std::max(600 - 50 * level, 100))
     {
         tick_couter = 0;
         figure.move(0, 1);

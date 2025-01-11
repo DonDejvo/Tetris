@@ -49,8 +49,8 @@ private:
     SDL_Window *handle;
     SDL_Renderer *renderer;
     int width, height;
-    std::pair<char, std::string> *data;
-    std::ostream &output_stream;
+    // std::pair<char, std::string> *data;
+    // std::ostream &output_stream;
     TTF_Font *font;
     Texture char_textures[256];
 };

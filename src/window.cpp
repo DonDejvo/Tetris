@@ -4,16 +4,16 @@
 #include "utils.hpp"
 
 Window::Window(std::ostream &output_stream, int width, int height)
-    : output_stream(output_stream), width(width), height(height)
+    : /*output_stream(output_stream),*/ width(width), height(height)
 {
   // Use a single contiguous block of memory instead of vector
-  data = new std::pair<char, std::string>[width * height];
-  std::memset((void*)data, 0, width * height * sizeof(std::pair<char, std::string>));
+  // data = new std::pair<char, std::string>[width * height];
+  // std::memset((void*)data, 0, width * height * sizeof(std::pair<char, std::string>));
 }
 
 Window::~Window()
 {
-  delete[] data; // Proper memory cleanup
+  // delete[] data; // Proper memory cleanup
 }
 
 void Window::begin_frame()
