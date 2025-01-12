@@ -193,15 +193,12 @@ void Game::update(Uint32 dt)
             running = false;
             break;
         case SDL_KEYDOWN:
-            if (e.key.keysym.sym == SDLK_ESCAPE)
-            {
-                running = false;
-                return;
-            }
             if (gameover)
             {
                 start_game();
                 return;
+            } else if(before_start_countdown > 0) {
+                before_start_countdown = 0;
             }
             switch (e.key.keysym.sym)
             {
@@ -238,6 +235,11 @@ void Game::update(Uint32 dt)
 
     if (gameover)
         return;
+
+    if(before_start_countdown > 0) {
+        before_start_countdown -= dt;
+        return;
+    }
 
     if (game_over_anim->is_playing())
     {
@@ -373,7 +375,7 @@ bool Game::check_collisions()
     for (int i = 0; i < 4; ++i)
     {
         Point p = figure.get_point(i);
-        if (p.x < 0 || p.x > COLS - 1 || p.y < 0 || p.y > ROWS - 1 || (p.y >= 0 && get_grid_item(p.x, p.y)))
+        if (p.x < 0 || p.x > COLS - 1 || p.y > ROWS - 1 || (p.y >= 0 && get_grid_item(p.x, p.y)))
         {
             return false;
         }
@@ -462,6 +464,7 @@ void Game::draw_figure() const
     for (int i = 0; i < 4; ++i)
     {
         Point p = figure.get_point(i);
+        if(p.y < 0) continue;
         win->draw_tile(GRID_X + p.x * TILE_SIZE, GRID_Y + p.y * TILE_SIZE, textures[get_level_tex_offset() + figure.get_texture_id()]);
         // win->draw_tiles(grid_offset.x + 2 + p.x * 2, grid_offset.y + p.y, "[]", Figure::get_draw_color(figures[cur_figure][6], level));
     }
@@ -684,6 +687,7 @@ void Game::start_game()
     row_clear_anim->reset();
     game_over_anim->reset();
     gameover = false;
+    before_start_countdown = 1000;
 
     cur_figure = next_figure_cb();
     next_figure = next_figure_cb();

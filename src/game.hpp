@@ -25,7 +25,7 @@
 #define ROWS 20
 #define COLS 10
 #define PERIOD 50
-#define FPS 20
+#define FPS 60
 #define HIDDEN_TILE 69
 #define LEVEL_COLOR_COUNT 10
 
@@ -102,6 +102,7 @@ private:
     std::unique_ptr<RowClearAnimation> row_clear_anim;
     std::unique_ptr<GameOverAnimation> game_over_anim;
     int statistics[FIGURE_COUNT] {0};
+    int before_start_countdown;
 };
 
 #endif
