@@ -4,25 +4,12 @@
 #include "utils.hpp"
 
 Window::Window(std::ostream &output_stream, int width, int height)
-    : /*output_stream(output_stream),*/ width(width), height(height)
+    : width(width), height(height)
 {
-  // Use a single contiguous block of memory instead of vector
-  // data = new std::pair<char, std::string>[width * height];
-  // std::memset((void*)data, 0, width * height * sizeof(std::pair<char, std::string>));
-}
-
-Window::~Window()
-{
-  // delete[] data; // Proper memory cleanup
 }
 
 void Window::begin_frame()
 {
-  // for (int i = 0; i < width * height; ++i)
-  // {
-  //     data[i].first = ' ';
-  //     data[i].second = COLOR_DEFAULT;
-  // }
   SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
   SDL_RenderClear(renderer);
 }
@@ -68,46 +55,13 @@ void Window::set_draw_color(Uint32 color)
 
 void Window::draw_tile(int x, int y, const Texture &texture /*char ch, const std::string &color, int repeat */)
 {
-  // if (x < 0 || x >= width || y < 0 || y >= height)
-  // {
-  //     return;
-  // }
-  // for (int i = 0; i < repeat; ++i)
-  // {
-  //     data[y * width + x + i] = {ch, color};
-  // }
-
   SDL_Rect src_rect{0, 0, texture.width, texture.height};
   SDL_Rect dst_rect{x, y, TILE_SIZE, TILE_SIZE};
   SDL_RenderCopy(renderer, texture.handle, &src_rect, &dst_rect);
 }
 
-void Window::draw_tiles(int x, int y, const std::string &s, const std::string &color)
-{
-  // int offset = 0;
-  // for (char ch : s)
-  // {
-  //     draw_tile(x + offset, y, ch, color);
-  //     ++offset;
-  // }
-}
-
 void Window::end_frame()
 {
-  // std::stringstream buffer;
-  // buffer << ANSI_CLEAR << ANSI_COLOR_RESET;
-  // buffer << "\r";
-  // for (int i = 0; i < height; ++i)
-  // {
-  //     buffer << "\r";
-  //     for (int j = 0; j < width; ++j)
-  //     {
-  //         buffer << data[+i * width + j].second << data[+i * width + j].first << ANSI_COLOR_RESET;
-  //     }
-  //     buffer << std::endl;
-  // }
-  // buffer << "\r" << std::noskipws;
-  // output_stream << buffer.str() << std::endl;
   SDL_RenderPresent(renderer);
 }
 

@@ -23,6 +23,7 @@ int main(int argc, char *argv[])
     {
         GameConfig config;
         config.level = params.level;
+        g.set_config(config);
         g.init();
 
 #ifdef EMSCRIPTEN

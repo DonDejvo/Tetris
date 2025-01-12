@@ -28,15 +28,13 @@ class Window
 {
 public:
     Window(std::ostream &output_stream, int width, int height);
-    ~Window();
     void begin_frame();
     void draw_image(const Texture &texture, int x, int y, int w, int h);
     void draw_image(const Texture &texture, int x, int y);
     void draw_rect(int x, int y, int w, int h);
     void draw_text(const std::string &text, int x, int y, Uint32 color);
     void set_draw_color(Uint32 color);
-    void draw_tile(int x, int y, const Texture &texture /* char ch, const std::string &color, int repeat = 1*/);
-    void draw_tiles(int x, int y, const std::string &s, const std::string &color);
+    void draw_tile(int x, int y, const Texture &texture);
     void end_frame();
     void init();
     void destroy();
@@ -49,8 +47,6 @@ private:
     SDL_Window *handle;
     SDL_Renderer *renderer;
     int width, height;
-    // std::pair<char, std::string> *data;
-    // std::ostream &output_stream;
     TTF_Font *font;
     Texture char_textures[256];
 };

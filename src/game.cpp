@@ -68,12 +68,13 @@ void Game::help()
               << "  - 4 lines cleared (Tetris): 1200 points\n"
               << "  - Bonus points are awarded based on the level.\n"
               << "Controls:\n"
-              << "  - Left:\t A\n"
-              << "  - Right:\t D\n"
-              << "  - Rotate:\t K\n"
-              << "  - Down:\t S\n"
-              << "  - Drop:\t Space\n"
-              << "  - Quit:\t Q\n"
+              << "  - Move Left:\t A\n"
+              << "  - Move Right:\t D\n"
+              << "  - Rotate Left: \t J\n"
+              << "  - Rotate Right:\t K\n"
+              << "  - Move Down:\t S\n"
+              << "  - Hard Drop:\t Space\n"
+              << "  - New Game:\t <Any Key>\n"
               << "Usage:\n"
               << "\tTetris [options]\n"
               << "Options:\n"
@@ -101,17 +102,6 @@ void Game::loop()
     SDL_Delay(std::max(dt - (cur_time - last_time), (Uint32)0));
     update(dt);
     draw();
-    // bool updated = false;
-    // while (acc_time >= dt)
-    // {
-    //     updated = true;
-    //     acc_time -= dt;
-    //     update(dt);
-    // }
-    // if (updated)
-    // {
-    //     draw();
-    // }
 }
 
 void Game::init()
@@ -168,19 +158,9 @@ void Game::draw() const
 
 void Game::update(Uint32 dt)
 {
-    // std::this_thread::sleep_for(std::chrono::milliseconds(PERIOD));
-    // std::unique_lock<std::mutex> lg(mutex);
 
-    // ++tick_couter;
-    // if (tick_couter == 10 - speed)
-    // {
-    //     tick_couter = 0;
-    //     figure_next_tick();
-    // }
-
-    // cvar.notify_all();
-
-    int dx = 0, rotation_dir = 0;
+    int dx = 0;
+    RotDir rotation_dir = NONE;
     bool drop_pressed = false;
 
     ////////INPUT////////
@@ -197,7 +177,9 @@ void Game::update(Uint32 dt)
             {
                 start_game();
                 return;
-            } else if(before_start_countdown > 0) {
+            }
+            else if (before_start_countdown > 0)
+            {
                 before_start_countdown = 0;
             }
             switch (e.key.keysym.sym)
@@ -209,10 +191,10 @@ void Game::update(Uint32 dt)
                 dx = 1;
                 break;
             case SDLK_k:
-                rotation_dir = 1;
+                rotation_dir = RotDir::RIGHT;
                 break;
             case SDLK_j:
-                rotation_dir = -1;
+                rotation_dir = RotDir::LEFT;
                 break;
             case SDLK_s:
                 down_pressed = true;
@@ -236,7 +218,8 @@ void Game::update(Uint32 dt)
     if (gameover)
         return;
 
-    if(before_start_countdown > 0) {
+    if (before_start_countdown > 0)
+    {
         before_start_countdown -= dt;
         return;
     }
@@ -253,31 +236,21 @@ void Game::update(Uint32 dt)
         return;
     }
 
-    //   ////////MOVE////////
-    //   figure.move(dx, 0);
-    //   if (!check_collisions()) {
-    //     figure.move(-dx, 0);
-    //   }
-    //   if (down_pressed) {
-    //     figure.move(0, 1);
-    //     if (!check_collisions()) {
-    //       figure.move(0, -1);
-    //     }
-    //   }
+    translate_figure(dx);
+    rotate_figure(rotation_dir);
 
-    //   ////////ROTATE////////
-    //   if (rotation_dir) {
-    //     figure.rotate(rotation_dir);
-    //     if (!check_collisions()) {
-    //       figure.rotate(-rotation_dir);
-    //     }
-    //   }
-
-    translate_figure(dx, rotation_dir, down_pressed && can_move_down, drop_pressed);
+    if (drop_pressed)
+    {
+        drop_figure();
+    }
+    else if (down_pressed && can_move_down)
+    {
+        move_down();
+    }
 
     ////////TICK////////
     tick_couter += dt;
-    if (tick_couter >= std::max(600 - 50 * level, 100))
+    if (tick_couter >= level_ticks[level < 10 ? level : 10])
     {
         tick_couter = 0;
         figure.move(0, 1);
@@ -299,61 +272,6 @@ void Game::update(Uint32 dt)
                 init_next_figure();
             }
         }
-    }
-}
-
-void Game::output()
-{
-    std::unique_lock<std::mutex> lg(mutex);
-    cvar.wait(lg);
-    draw();
-}
-
-void Game::input()
-{
-    std::unique_lock<std::mutex> lg(mutex);
-    lg.unlock();
-    if (!running)
-    {
-        return;
-    }
-    char c;
-    std::cin.get(c);
-    bool should_notify = true;
-    int dx = 0;
-    bool down_pressed = false;
-    bool drop_pressed = false;
-    int rotation_dir = 0;
-    switch (c)
-    {
-    case 'q':
-        running = false;
-        break;
-    case 'a':
-        dx = -1;
-        break;
-    case 'd':
-        dx = 1;
-        break;
-    case 's':
-        down_pressed = true;
-        break;
-    case 'k':
-        rotation_dir = 1;
-        break;
-    case ' ':
-        drop_pressed = true;
-        break;
-    default:
-        should_notify = false;
-        break;
-    }
-
-    translate_figure(dx, rotation_dir, down_pressed, drop_pressed);
-
-    if (should_notify)
-    {
-        cvar.notify_one();
     }
 }
 
@@ -383,42 +301,47 @@ bool Game::check_collisions()
     return true;
 }
 
-void Game::translate_figure(int dx, int rot_dir, bool down, bool drop)
+void Game::translate_figure(int dx)
 {
-    figure.move(dx, 0);
-    if (!check_collisions())
+    int n = dx > 0 ? 1 : -1;
+    for (int i = 0; i < abs(dx); ++i)
     {
-        figure.move(-dx, 0);
-    }
-
-    if (rot_dir != 0)
-    {
-        figure.rotate(rot_dir);
+        figure.move(n, 0);
         if (!check_collisions())
         {
-            figure.rotate(-rot_dir);
+            figure.move(-n, 0);
         }
     }
+}
 
-    if (drop)
+void Game::rotate_figure(RotDir rot_dir)
+{
+    figure.rotate(rot_dir);
+    if (!check_collisions())
     {
-        while (true)
-        {
-            figure.move(0, 1);
-            if (!check_collisions())
-            {
-                figure.move(0, -1);
-                break;
-            }
-        }
+        figure.rotate(rot_dir == RotDir::LEFT ? RotDir::RIGHT : RotDir::LEFT);
     }
-    else if (down)
+}
+
+void Game::drop_figure()
+{
+    while (true)
     {
         figure.move(0, 1);
         if (!check_collisions())
         {
             figure.move(0, -1);
+            break;
         }
+    }
+}
+
+void Game::move_down()
+{
+    figure.move(0, 1);
+    if (!check_collisions())
+    {
+        figure.move(0, -1);
     }
 }
 
@@ -464,42 +387,14 @@ void Game::draw_figure() const
     for (int i = 0; i < 4; ++i)
     {
         Point p = figure.get_point(i);
-        if(p.y < 0) continue;
+        if (p.y < 0)
+            continue;
         win->draw_tile(GRID_X + p.x * TILE_SIZE, GRID_Y + p.y * TILE_SIZE, textures[get_level_tex_offset() + figure.get_texture_id()]);
-        // win->draw_tiles(grid_offset.x + 2 + p.x * 2, grid_offset.y + p.y, "[]", Figure::get_draw_color(figures[cur_figure][6], level));
     }
 }
 
 void Game::draw_grid() const
 {
-    // for (int i = 0; i < ROWS + 1; ++i)
-    // {
-    //     win->draw_tiles(grid_offset.x, grid_offset.y + i, "<!", COLOR_DEFAULT);
-    //     if (i == ROWS)
-    //     {
-    //         win->draw_tile(grid_offset.x + 2, grid_offset.y + i, nullptr);
-    //     }
-    //     else
-    //     {
-    //         for (int j = 0; j < COLS; ++j)
-    //         {
-    //             int tile = grid[i][j];
-    //             if (tile)
-    //             {
-    //                 win->draw_tiles(grid_offset.x + 2 + j * 2, grid_offset.y + i, "[]", Figure::get_draw_color(tile - 1, level));
-    //             }
-    //             else
-    //             {
-    //                 win->draw_tiles(grid_offset.x + 2 + j * 2, grid_offset.y + i, " .", COLOR_DEFAULT);
-    //             }
-    //         }
-    //     }
-    //     win->draw_tiles(grid_offset.x + 2 + COLS * 2, grid_offset.y + i, "!>", COLOR_DEFAULT);
-    // }
-    // for (int i = 0; i < 10; ++i)
-    // {
-    //     win->draw_tiles(grid_offset.x + 2 + i * 2, grid_offset.y + ROWS + 1, "\\/", COLOR_DEFAULT);
-    // }
     for (int i = 0; i < ROWS; ++i)
     {
         for (int j = 0; j < COLS; ++j)
@@ -516,53 +411,6 @@ void Game::draw_grid() const
 
 void Game::draw_sidebar() const
 {
-    // int y = 1;
-    // win->draw_tiles(left_bar_offset.x + 2, left_bar_offset.y + y, "Score: " + std::to_string(score), COLOR_DEFAULT);
-
-    // y = 2;
-    // win->draw_tiles(left_bar_offset.x + 2, left_bar_offset.y + y, "Level: " + std::to_string(level), COLOR_DEFAULT);
-
-    // y = 3;
-    // win->draw_tiles(left_bar_offset.x + 2, left_bar_offset.y + y, "Lines: " + std::to_string(rows_cleared), COLOR_DEFAULT);
-
-    // y = 5;
-    // win->draw_tiles(left_bar_offset.x + 2, left_bar_offset.y + y + 1, "Next block", COLOR_DEFAULT);
-
-    // y = 8;
-    // for (int i = 0; i < 4; ++i)
-    // {
-    //     Point p = Figure::get_figure_point(next_figure, i);
-    //     win->draw_tiles(left_bar_offset.x + 3 + p.x * 2, left_bar_offset.y + y + p.y, "[]", Figure::get_draw_color(figures[next_figure][6], level));
-    // }
-
-    // if (!show_help)
-    //     return;
-
-    // y = 1;
-    // win->draw_tiles(right_bar_offset.x + 6, right_bar_offset.y + y, "HELP", COLOR_DEFAULT);
-
-    // y = 3;
-    // win->draw_tiles(right_bar_offset.x + 4, right_bar_offset.y + y, "Left:\t A", COLOR_DEFAULT);
-
-    // y = 4;
-    // win->draw_tiles(right_bar_offset.x + 4, right_bar_offset.y + y, "Right:\t D", COLOR_DEFAULT);
-
-    // y = 5;
-    // win->draw_tiles(right_bar_offset.x + 4, right_bar_offset.y + y, "Down:\t S", COLOR_DEFAULT);
-
-    // y = 6;
-    // win->draw_tiles(right_bar_offset.x + 4, right_bar_offset.y + y, "Rotate:\t K", COLOR_DEFAULT);
-
-    // y = 7;
-    // win->draw_tiles(right_bar_offset.x + 4, right_bar_offset.y + y, "Drop:\t Space", COLOR_DEFAULT);
-
-    // y = 8;
-    // win->draw_tiles(right_bar_offset.x + 4, right_bar_offset.y + y, "Quit:\t Q", COLOR_DEFAULT);
-
-    // int x = 480, y = 0;
-    // win->set_draw_color(0x888888FF);
-    // win->draw_rect(x, y, 240, 960);
-
     win->draw_text("STATISTICS", STATISTICS_X + 20, STATISTICS_Y, 0xFFFFFFFF);
     for (int i = 0; i < FIGURE_COUNT; ++i)
     {
@@ -698,6 +546,18 @@ void Game::start_game()
 int Game::get_level_tex_offset() const
 {
     return level % LEVEL_COLOR_COUNT * 8;
+}
+
+void Game::print_grid() const
+{
+    for (int i = 0; i < ROWS; ++i)
+    {
+        for (int j = 0; j < COLS; ++j)
+        {
+            std::cout << grid[i][j] ? 1 : 0;
+        }
+        std::cout << "\n";
+    }
 }
 
 Game::Game(const GameConfig &config)

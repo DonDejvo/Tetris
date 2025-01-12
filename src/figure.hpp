@@ -3,6 +3,10 @@
 
 #include "window.hpp"
 
+enum RotDir {
+  LEFT = -1, RIGHT = 1, NONE = 0
+};
+
 #define FIGURE_COUNT 7
 
 const int figures[FIGURE_COUNT][7]{
@@ -14,16 +18,6 @@ const int figures[FIGURE_COUNT][7]{
     0, 1, 2, 6, 3, 1, 0, // J
     0, 1, 2, 4, 3, 1, 3, // L
 };
-
-// const std::string level_colors[LEVEL_COLOR_COUNT][2]{
-//     {"\033[94m", "\033[34m"}, // lightblue, blue
-//     {"\033[33m", "\033[32m"}, // yellow, green
-//     {"\033[95m", "\033[35m"}, // violet, purple
-//     {"\033[32m", "\033[34m"}, // green, blue
-//     {"\033[36m", "\033[35m"}, // cyan, purple
-//     {"\033[34m", "\033[36m"}, // blue, cyan
-//     {"\033[31m", "\033[34m"} // red, blue
-// };
 
 struct Point
 {
@@ -42,14 +36,13 @@ private:
 public:
   void init(int n);
   void move(int dx, int dy);
-  void rotate(int dir);
+  void rotate(RotDir dir);
   bool is_gameover();
   inline int get_id() const { return n; };
   inline Point get_position() const { return position; };
   Point get_point(int i) const;
   inline int get_texture_id() const { return texture_id; };
   static Point get_figure_point(int figure_id, int idx);
-  // static std::string get_draw_color(int tex_id, int level);
 };
 
 #endif

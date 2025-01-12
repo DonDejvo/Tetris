@@ -28,16 +28,14 @@ void Figure::move(int dx, int dy)
     }
 }
 
-void Figure::rotate(int dir)
+void Figure::rotate(RotDir dir)
 {
-    if(n == 1) return;
-
-    dir = dir < 0 ? -1 : 1;
+    if(dir == 0 || n == 1) return;
 
     if (n == 0 || n == 3 || n == 4)
     {
         if((rotation == 1 && dir == 1) || (rotation == 0 && dir == -1)) {
-            dir *= -1;
+            dir = dir > 0 ? RotDir::LEFT : RotDir::RIGHT;
         }
     }
 
@@ -72,8 +70,3 @@ Point Figure::get_figure_point(int figure_id, int idx)
 {
     return Point{figures[figure_id][idx] % 4, figures[figure_id][idx] / 4};
 }
-
-// std::string Figure::get_draw_color(int tex_id, int level)
-// {
-//     return level_colors[(level) % LEVEL_COLOR_COUNT][tex_id % 2];
-// }
