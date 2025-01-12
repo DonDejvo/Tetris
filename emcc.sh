@@ -1,0 +1,1 @@
+emcc src/main.cpp src/game.cpp src/argparser.cpp src/animation.cpp src/figure.cpp src/utils.cpp src/window.cpp --preload-file assets -s USE_SDL=2 -s USE_SDL_TTF=2 -s USE_SDL_IMAGE=2 -sSDL2_IMAGE_FORMATS='["gif"]' -o index.html
